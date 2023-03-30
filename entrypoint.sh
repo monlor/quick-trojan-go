@@ -2,7 +2,7 @@
 
 set -eu
 
-TROJAN_CERT_DIR=/root/.local/share/caddy/acme/acme-v02.api.letsencrypt.org-directory
+TROJAN_CERT_DIR=/root/.local/share/caddy/certificates/acme-v02.api.letsencrypt.org-directory
 
 echo "生成Caddyfile..."
 cat > /etc/caddy/Caddyfile <<-EOF
