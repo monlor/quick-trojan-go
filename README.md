@@ -9,6 +9,7 @@
 * 修改下面命令中的DOMAIN和PASSWORD变量，在VPS上执行
 
 ```bash
+docker volume create trojan_data
 docker run -d \
   --name trojan \
   -p 80:80/tcp \
@@ -16,6 +17,7 @@ docker run -d \
   -p 443:443/udp \
   -e DOMAIN=你的域名 \
   -e PASSWORD=trojan的访问密码 \
+  -v trojan_data:/root/.local/share/caddy \
   --restart unless-stopped \
   monlor/quick-trojan-go:main
 ```
