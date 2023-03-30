@@ -17,7 +17,7 @@ docker run -d \
   -e DOMAIN=你的域名 \
   -e PASSWORD=trojan的访问密码 \
   --restart unless-stopped \
-  monlor/quick-trojan-go:latest
+  monlor/quick-trojan-go:main
 ```
 
 另外，如果你还没有安装docker，执行下面的命令一键安装
