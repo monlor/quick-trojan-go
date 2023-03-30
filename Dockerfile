@@ -4,7 +4,7 @@ EXPOSE 443 80
 
 RUN apk update && apk add --no-cache caddy
 
-COPY ./index.html /opt/trojan/wwwroot
+COPY ./index.html /opt/trojan/wwwroot/
 
 COPY ./entrypoint.sh /
 
