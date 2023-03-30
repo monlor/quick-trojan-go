@@ -6,14 +6,14 @@ TROJAN_CERT_DIR=/root/.local/share/caddy/certificates/acme-v02.api.letsencrypt.o
 
 echo "生成Caddyfile..."
 cat > /etc/caddy/Caddyfile <<-EOF
-${DOMAIN}:80 {
+http://${DOMAIN}:80 {
     root * /opt/trojan/wwwroot
     log {
         output file /var/log/caddy.log
     }
     file_server
 }
-${DOMAIN}:443 {
+https://${DOMAIN}:8443 {
     root * /opt/trojan/wwwroot
     log {
         output file /var/log/caddy.log
