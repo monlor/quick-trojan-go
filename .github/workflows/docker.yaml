@@ -1,0 +1,112 @@
+name: build-image
+
+# This workflow uses actions that are not certified by GitHub.
+# They are provided by a third-party and are governed by
+# separate terms of service, privacy policy, and support
+# documentation.
+
+on:
+  push:
+    branches: [ main ]
+    # Publish semver tags as releases.
+    tags: [ 'v*.*.*' ]
+
+concurrency: ci-${{ github.ref }}
+
+env:
+  PROJECT_NAME: quick-trojan-go
+  WORK_DIR: .
+  # github.repository as <account>/<repo>
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      # This is used to complete the identity challenge
+      # with sigstore/fulcio when running outside of PRs.
+      id-token: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+
+      # Workaround: https://github.com/docker/build-push-action/issues/461
+      - name: Setup Docker buildx
+        uses: docker/setup-buildx-action@v2
+
+      # Extract metadata (tags, labels) for Docker
+      # https://github.com/docker/metadata-action
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: ${{ secrets.DOCKER_USERNAME }}/${{ env.PROJECT_NAME }}
+
+      - name: Cache Docker layers
+        uses: actions/cache@v2
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-${{ env.PROJECT_NAME }}-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-${{ env.PROJECT_NAME }}-
+
+      # Login against a Docker registry except on PR
+      # https://github.com/docker/login-action
+      - name: Log into DockerHub 
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      # Build and push Docker image with Buildx (don't push on PR)
+      # https://github.com/docker/build-push-action
+      - name: Build and push Docker image
+        id: build-and-push
+        uses: docker/build-push-action@v4
+        with:
+          context: ${{ env.WORK_DIR }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          platforms: linux/amd64,linux/arm64
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache-new
+
+      - name: Move cache
+        run: |
+          rm -rf /tmp/.buildx-cache
+          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
+
+      - name: Check readme existence
+        id: check_files
+        uses: andstor/file-existence-action@v1
+        with:
+          files: "${{ env.WORK_DIR }}/README.md"
+
+      - name: Sync README.md to Docker Hub
+        if: steps.check_files.outputs.files_exists == 'true'
+        uses: ms-jpq/sync-dockerhub-readme@v1
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+          repository: ${{ secrets.DOCKER_USERNAME }}/${{ env.PROJECT_NAME }}
+          readme: "${{ env.WORK_DIR }}/README.md"
+ 
+      - name: Notification
+        uses: monlor/bark-action@v3
+        if: always()
+        with:
+          host: ${{ secrets.BARK_HOST}} # not required
+          key: ${{ secrets.BARK_KEY }}   # Your secret key
+          title: Github Actions
+          body: '${{ github.repository }}/${{ github.ref }} ran ${{ job.status }}！'
+          isArchive: 1
+          url: 'github://github.com/${{ github.repository }}'
+          group: Github
+          icon: https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png
+          copy: ${{ steps.meta.outputs.tags }}
