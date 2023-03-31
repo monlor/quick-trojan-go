@@ -27,3 +27,7 @@ docker run -d \
 ```bash
 curl -sSL https://get.docker.com/ | sh
 ```
+
+## 参考
+
+[trojan-caddy-docker-compose](https://github.com/FaithPatrick/trojan-caddy-docker-compose)
