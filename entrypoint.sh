@@ -6,7 +6,7 @@ TROJAN_CERT_DIR=/root/.local/share/caddy/certificates/acme-v02.api.letsencrypt.o
 
 echo "生成Caddyfile..."
 cat > /etc/caddy/Caddyfile <<-EOF
-http://${DOMAIN}:80 {
+http://${DOMAIN}:${REMOTE_PORT:-80} {
     root * /opt/trojan/wwwroot
     log {
         output file /var/log/caddy.log
@@ -35,9 +35,9 @@ cat > /etc/trojan-go/config.json <<-EOF
 {
     "run_type": "server",
     "local_addr": "0.0.0.0",
-    "local_port": 443,
+    "local_port": ${LOCAL_PORT:-443},
     "remote_addr": "${DOMAIN}",
-    "remote_port": 80,
+    "remote_port": ${REMOTE_PORT:-80},
     "password": [
         "${PASSWORD:-123456}"
     ],
